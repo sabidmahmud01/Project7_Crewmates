@@ -2,7 +2,7 @@
 
 Submitted by: **Sabid Mahmud**
 
-This web app: **CrewForge is a custom squad builder where users can create, view, update, and delete game crewmates with role-based attributes.**
+This web app: **A simple Crewmates app where users can create, view, update, and delete crewmates.**
 
 Time spent: **4** hours spent in total
 
@@ -31,9 +31,9 @@ The following **required** functionality is completed:
 
 The following **stretch** features are implemented:
 
-- [x] A crewmate can be given a category upon creation which restricts their attribute options
-- [x] A section of the summary page displays summary statistics about a user's crew
-- [x] The site displays a custom success metric about a user's crew which changes the look of the crewmate list
+- [ ] A crewmate can be given a category upon creation which restricts their attribute options
+- [ ] A section of the summary page displays summary statistics about a user's crew
+- [ ] The site displays a custom success metric about a user's crew which changes the look of the crewmate list
 
 ## Video Walkthrough
 
@@ -48,7 +48,7 @@ GIF created with **ScreenToGif**
 - The app is Supabase-ready through `@supabase/supabase-js`.
 - If Supabase environment variables are not set, the app uses browser storage so the project can still be tested locally.
 - Expected Supabase table name: `crewmates`.
-- Suggested Supabase columns: `id`, `name`, `role`, `color`, `power`, `trait`, `notes`, and `created_at`.
+- Suggested Supabase columns: `id`, `name`, `speed`, `color`, `notes`, and `created_at`.
 
 ## License
 

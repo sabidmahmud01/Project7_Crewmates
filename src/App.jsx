@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, NavLink, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import {
   createCrewmate,
@@ -7,119 +7,63 @@ import {
   getCrewmates,
   updateCrewmate,
 } from './services/crewmateService';
-import { isSupabaseConfigured } from './lib/supabaseClient';
 
-const roles = {
-  Strategist: ['Map Sense', 'Fast Planner', 'Risk Reader'],
-  Engineer: ['Quick Fix', 'Shield Builder', 'System Tuner'],
-  Scout: ['Silent Step', 'Long Vision', 'Signal Boost'],
-  Medic: ['Rapid Heal', 'Calm Aura', 'Recovery Kit'],
-};
+const speeds = ['Slow', 'Medium', 'Fast'];
+const colors = ['Red', 'Blue', 'Green', 'Purple'];
 
-const colors = ['Crimson', 'Cobalt', 'Emerald', 'Gold', 'Violet', 'Slate'];
-const traits = ['Bold', 'Patient', 'Curious', 'Focused', 'Playful', 'Steady'];
-
-const defaultCrewmate = {
+const blankCrewmate = {
   name: '',
-  role: 'Strategist',
-  color: 'Crimson',
-  power: roles.Strategist[0],
-  trait: 'Bold',
+  speed: 'Medium',
+  color: 'Red',
   notes: '',
 };
 
-function Layout() {
+function App() {
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
-        <Link className="brand" to="/">
-          <span className="brand-mark">CF</span>
-          <span>
-            <strong>CrewForge</strong>
-            <small>Build a balanced game squad</small>
-          </span>
-        </Link>
-        <nav aria-label="Primary navigation">
-          <NavLink to="/" end>Dashboard</NavLink>
+    <div className="app">
+      <header>
+        <Link to="/" className="title">Crewmates</Link>
+        <nav>
+          <NavLink to="/" end>Home</NavLink>
           <NavLink to="/create">Create</NavLink>
-          <NavLink to="/crewmates">Crew Gallery</NavLink>
+          <NavLink to="/crewmates">Gallery</NavLink>
         </nav>
-        <p className="storage-note">
-          {isSupabaseConfigured ? 'Connected to Supabase' : 'Demo mode: saved in this browser'}
-        </p>
-      </aside>
+      </header>
 
-      <main>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/create" element={<CreateCrewmate />} />
-          <Route path="/crewmates" element={<CrewmateGallery />} />
-          <Route path="/crewmates/:id" element={<CrewmateDetails />} />
-          <Route path="/edit/:id" element={<EditCrewmate />} />
-        </Routes>
-      </main>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/create" element={<CreateCrewmate />} />
+        <Route path="/crewmates" element={<CrewmateGallery />} />
+        <Route path="/crewmates/:id" element={<CrewmateDetails />} />
+        <Route path="/edit/:id" element={<EditCrewmate />} />
+      </Routes>
     </div>
   );
 }
 
-function Dashboard() {
-  const [crewmates, setCrewmates] = useState([]);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    getCrewmates().then(setCrewmates).catch(() => setError('The crew could not be loaded.'));
-  }, []);
-
-  const stats = useMemo(() => buildStats(crewmates), [crewmates]);
-
+function Home() {
   return (
-    <section className="screen dashboard-screen">
-      <div className="intro">
-        <div>
-          <p className="eyebrow">Project 7 Crewmates</p>
-          <h1>Assemble a squad that can handle anything.</h1>
-          <p>
-            Create custom crewmates, assign their role, pick attributes, and keep a live
-            roster sorted by the newest recruit.
-          </p>
-        </div>
-        <Link className="primary-action" to="/create">Create crewmate</Link>
-      </div>
-
-      {error && <p className="error">{error}</p>}
-
-      <div className="stats-grid">
-        <Stat label="Crew size" value={crewmates.length} />
-        <Stat label="Most common role" value={stats.topRole} />
-        <Stat label="Crew success" value={`${stats.success}%`} />
-      </div>
-
-      <section className={`success-band ${stats.success >= 75 ? 'strong' : ''}`}>
-        <div>
-          <h2>Mission readiness</h2>
-          <p>{stats.message}</p>
-        </div>
-        <span>{stats.success}%</span>
-      </section>
-
-      <CrewmateList crewmates={crewmates.slice(0, 4)} emptyMessage="No crewmates yet." />
-    </section>
+    <main className="page">
+      <h1>Welcome to Crewmates</h1>
+      <p>Create a simple crew, view your crewmates, edit them, and delete them.</p>
+      <Link className="button" to="/create">Create a crewmate</Link>
+    </main>
   );
 }
 
 function CreateCrewmate() {
   const navigate = useNavigate();
 
-  const handleSubmit = async (formData) => {
-    const created = await createCrewmate(formData);
+  const handleSubmit = async (crewmate) => {
+    const created = await createCrewmate(crewmate);
     navigate(`/crewmates/${created.id}`);
   };
 
   return (
-    <section className="screen">
-      <PageHeader title="Create a crewmate" subtitle="Choose a role first to unlock matching power options." />
-      <CrewmateForm submitLabel="Add to crew" onSubmit={handleSubmit} />
-    </section>
+    <main className="page">
+      <h1>Create a New Crewmate</h1>
+      <CrewmateForm buttonText="Create Crewmate" onSubmit={handleSubmit} />
+    </main>
   );
 }
 
@@ -128,15 +72,40 @@ function CrewmateGallery() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    getCrewmates().then(setCrewmates).catch(() => setError('The crew could not be loaded.'));
+    getCrewmates()
+      .then(setCrewmates)
+      .catch(() => setError('Could not load crewmates.'));
   }, []);
 
   return (
-    <section className="screen">
-      <PageHeader title="Crew Gallery" subtitle="Newest crewmates appear first." action={<Link className="secondary-action" to="/create">New crewmate</Link>} />
+    <main className="page">
+      <div className="page-heading">
+        <div>
+          <h1>Your Crewmate Gallery</h1>
+          <p>Newest crewmates show up first.</p>
+        </div>
+        <Link className="button" to="/create">Add crewmate</Link>
+      </div>
+
       {error && <p className="error">{error}</p>}
-      <CrewmateList crewmates={crewmates} emptyMessage="Your gallery is empty. Create your first crewmate." />
-    </section>
+
+      {crewmates.length === 0 ? (
+        <p>No crewmates yet.</p>
+      ) : (
+        <div className="grid">
+          {crewmates.map((crewmate) => (
+            <article className="card" key={crewmate.id}>
+              <Link to={`/crewmates/${crewmate.id}`}>
+                <h2>{crewmate.name}</h2>
+                <p>Speed: {crewmate.speed}</p>
+                <p>Color: {crewmate.color}</p>
+              </Link>
+              <Link className="small-button" to={`/edit/${crewmate.id}`}>Edit</Link>
+            </article>
+          ))}
+        </div>
+      )}
+    </main>
   );
 }
 
@@ -148,38 +117,30 @@ function CrewmateDetails() {
   useEffect(() => {
     getCrewmate(id)
       .then((data) => {
-        if (!data) setError('That crewmate was not found.');
+        if (!data) {
+          setError('Crewmate not found.');
+          return;
+        }
         setCrewmate(data);
       })
-      .catch(() => setError('That crewmate could not be loaded.'));
+      .catch(() => setError('Could not load this crewmate.'));
   }, [id]);
 
-  if (error) return <MessageScreen message={error} />;
-  if (!crewmate) return <MessageScreen message="Loading crewmate..." />;
+  if (error) return <Message text={error} />;
+  if (!crewmate) return <Message text="Loading..." />;
 
   return (
-    <section className="screen details-screen">
-      <Link className="back-link" to="/crewmates">Back to gallery</Link>
-      <article className="details-card">
-        <div className={`avatar ${crewmate.color.toLowerCase()}`}>{crewmate.name.slice(0, 2).toUpperCase()}</div>
-        <div>
-          <p className="eyebrow">{crewmate.role}</p>
-          <h1>{crewmate.name}</h1>
-          <p>
-            {crewmate.name} brings {crewmate.power.toLowerCase()} to the squad with a
-            {` ${crewmate.trait.toLowerCase()}`} approach.
-          </p>
-          <dl>
-            <div><dt>Color</dt><dd>{crewmate.color}</dd></div>
-            <div><dt>Power</dt><dd>{crewmate.power}</dd></div>
-            <div><dt>Trait</dt><dd>{crewmate.trait}</dd></div>
-            <div><dt>Created</dt><dd>{new Date(crewmate.created_at).toLocaleString()}</dd></div>
-          </dl>
-          {crewmate.notes && <p className="notes">{crewmate.notes}</p>}
-          <Link className="primary-action" to={`/edit/${crewmate.id}`}>Edit crewmate</Link>
-        </div>
-      </article>
-    </section>
+    <main className="page">
+      <Link to="/crewmates">Back to gallery</Link>
+      <section className="detail">
+        <h1>{crewmate.name}</h1>
+        <p><strong>Speed:</strong> {crewmate.speed}</p>
+        <p><strong>Color:</strong> {crewmate.color}</p>
+        <p><strong>Created:</strong> {new Date(crewmate.created_at).toLocaleString()}</p>
+        <p><strong>Notes:</strong> {crewmate.notes || 'No notes yet.'}</p>
+        <Link className="button" to={`/edit/${crewmate.id}`}>Edit crewmate</Link>
+      </section>
+    </main>
   );
 }
 
@@ -192,15 +153,17 @@ function EditCrewmate() {
   useEffect(() => {
     getCrewmate(id)
       .then((data) => {
-        if (!data) setError('That crewmate was not found.');
+        if (!data) {
+          setError('Crewmate not found.');
+          return;
+        }
         setCrewmate(data);
       })
-      .catch(() => setError('That crewmate could not be loaded.'));
+      .catch(() => setError('Could not load this crewmate.'));
   }, [id]);
 
-  const handleSubmit = async (formData) => {
-    const updated = await updateCrewmate(id, formData);
-    setCrewmate(updated);
+  const handleSubmit = async (updates) => {
+    await updateCrewmate(id, updates);
     navigate('/crewmates');
   };
 
@@ -209,181 +172,115 @@ function EditCrewmate() {
     navigate('/crewmates');
   };
 
-  if (error) return <MessageScreen message={error} />;
-  if (!crewmate) return <MessageScreen message="Loading edit form..." />;
+  if (error) return <Message text={error} />;
+  if (!crewmate) return <Message text="Loading..." />;
 
   return (
-    <section className="screen">
-      <PageHeader title={`Edit ${crewmate.name}`} subtitle="Update attributes or remove this crewmate from the squad." />
-      <CrewmateForm initialCrewmate={crewmate} submitLabel="Save changes" onSubmit={handleSubmit} onDelete={handleDelete} />
-    </section>
+    <main className="page">
+      <h1>Update Crewmate</h1>
+      <CrewmateForm
+        crewmate={crewmate}
+        buttonText="Update Crewmate"
+        onSubmit={handleSubmit}
+        onDelete={handleDelete}
+      />
+    </main>
   );
 }
 
-function CrewmateForm({ initialCrewmate = defaultCrewmate, submitLabel, onSubmit, onDelete }) {
-  const [formData, setFormData] = useState(() => ({ ...defaultCrewmate, ...initialCrewmate }));
+function CrewmateForm({ crewmate = blankCrewmate, buttonText, onSubmit, onDelete }) {
+  const [formData, setFormData] = useState({ ...blankCrewmate, ...crewmate });
   const [error, setError] = useState('');
 
-  const rolePowers = roles[formData.role];
-
   const updateField = (field, value) => {
-    setFormData((current) => {
-      const next = { ...current, [field]: value };
-      if (field === 'role') next.power = roles[value][0];
-      return next;
-    });
+    setFormData((current) => ({ ...current, [field]: value }));
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    setError('');
 
     if (!formData.name.trim()) {
-      setError('Give your crewmate a name first.');
+      setError('Please enter a name.');
       return;
     }
 
-    try {
-      await onSubmit({ ...formData, name: formData.name.trim() });
-    } catch {
-      setError('This crewmate could not be saved.');
-    }
+    setError('');
+    await onSubmit({ ...formData, name: formData.name.trim() });
   };
 
   return (
-    <form className="crewmate-form" onSubmit={handleSubmit}>
+    <form className="form" onSubmit={handleSubmit}>
       {error && <p className="error">{error}</p>}
 
-      <label className="field">
-        <span>Name</span>
-        <input value={formData.name} onChange={(event) => updateField('name', event.target.value)} placeholder="Nova" />
+      <label>
+        Name
+        <input
+          value={formData.name}
+          onChange={(event) => updateField('name', event.target.value)}
+          placeholder="Crewmate name"
+        />
       </label>
 
-      <OptionGroup label="Role" value={formData.role} options={Object.keys(roles)} onChange={(value) => updateField('role', value)} />
-      <OptionGroup label="Power" value={formData.power} options={rolePowers} onChange={(value) => updateField('power', value)} />
-      <OptionGroup label="Color" value={formData.color} options={colors} onChange={(value) => updateField('color', value)} />
-      <OptionGroup label="Trait" value={formData.trait} options={traits} onChange={(value) => updateField('trait', value)} />
+      <fieldset>
+        <legend>Speed</legend>
+        {speeds.map((speed) => (
+          <label className="choice" key={speed}>
+            <input
+              type="radio"
+              name="speed"
+              value={speed}
+              checked={formData.speed === speed}
+              onChange={() => updateField('speed', speed)}
+            />
+            {speed}
+          </label>
+        ))}
+      </fieldset>
 
-      <label className="field">
-        <span>Extra notes</span>
-        <textarea value={formData.notes || ''} onChange={(event) => updateField('notes', event.target.value)} placeholder="What makes this crewmate useful?" />
+      <fieldset>
+        <legend>Color</legend>
+        {colors.map((color) => (
+          <label className="choice" key={color}>
+            <input
+              type="radio"
+              name="color"
+              value={color}
+              checked={formData.color === color}
+              onChange={() => updateField('color', color)}
+            />
+            {color}
+          </label>
+        ))}
+      </fieldset>
+
+      <label>
+        Notes
+        <textarea
+          value={formData.notes || ''}
+          onChange={(event) => updateField('notes', event.target.value)}
+          placeholder="Extra details for the crewmate"
+        />
       </label>
 
-      <div className="form-actions">
-        <button className="primary-action" type="submit">{submitLabel}</button>
-        {onDelete && <button className="danger-action" type="button" onClick={onDelete}>Delete crewmate</button>}
+      <div className="actions">
+        <button className="button" type="submit">{buttonText}</button>
+        {onDelete && (
+          <button className="delete-button" type="button" onClick={onDelete}>
+            Delete Crewmate
+          </button>
+        )}
       </div>
     </form>
   );
 }
 
-function OptionGroup({ label, value, options, onChange }) {
+function Message({ text }) {
   return (
-    <fieldset className="option-group">
-      <legend>{label}</legend>
-      <div>
-        {options.map((option) => (
-          <label key={option} className={value === option ? 'selected' : ''}>
-            <input type="radio" name={label} value={option} checked={value === option} onChange={() => onChange(option)} />
-            <span>{option}</span>
-          </label>
-        ))}
-      </div>
-    </fieldset>
+    <main className="page">
+      <p>{text}</p>
+      <Link className="button" to="/crewmates">Go to gallery</Link>
+    </main>
   );
 }
 
-function CrewmateList({ crewmates, emptyMessage }) {
-  if (!crewmates.length) {
-    return (
-      <div className="empty-state">
-        <h2>{emptyMessage}</h2>
-        <Link className="primary-action" to="/create">Create crewmate</Link>
-      </div>
-    );
-  }
-
-  return (
-    <div className="crew-grid">
-      {crewmates.map((crewmate) => (
-        <article className="crew-card" key={crewmate.id}>
-          <Link to={`/crewmates/${crewmate.id}`} className="card-link" aria-label={`View details for ${crewmate.name}`}>
-            <div className={`avatar ${crewmate.color.toLowerCase()}`}>{crewmate.name.slice(0, 2).toUpperCase()}</div>
-            <div>
-              <p className="eyebrow">{crewmate.role}</p>
-              <h2>{crewmate.name}</h2>
-              <p>{crewmate.power} with a {crewmate.trait.toLowerCase()} style.</p>
-            </div>
-          </Link>
-          <Link className="edit-link" to={`/edit/${crewmate.id}`}>Edit</Link>
-        </article>
-      ))}
-    </div>
-  );
-}
-
-function Stat({ label, value }) {
-  return (
-    <article className="stat-card">
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </article>
-  );
-}
-
-function PageHeader({ title, subtitle, action }) {
-  return (
-    <header className="page-header">
-      <div>
-        <p className="eyebrow">CrewForge</p>
-        <h1>{title}</h1>
-        <p>{subtitle}</p>
-      </div>
-      {action}
-    </header>
-  );
-}
-
-function MessageScreen({ message }) {
-  return (
-    <section className="screen">
-      <div className="empty-state">
-        <h1>{message}</h1>
-        <Link className="primary-action" to="/crewmates">Go to gallery</Link>
-      </div>
-    </section>
-  );
-}
-
-function buildStats(crewmates) {
-  if (!crewmates.length) {
-    return {
-      topRole: 'None yet',
-      success: 0,
-      message: 'Start recruiting to calculate your mission readiness.',
-    };
-  }
-
-  const roleCounts = crewmates.reduce((counts, crewmate) => {
-    counts[crewmate.role] = (counts[crewmate.role] || 0) + 1;
-    return counts;
-  }, {});
-
-  const topRole = Object.entries(roleCounts).sort((a, b) => b[1] - a[1])[0][0];
-  const uniqueRoles = Object.keys(roleCounts).length;
-  const uniqueTraits = new Set(crewmates.map((crewmate) => crewmate.trait)).size;
-  const success = Math.min(100, Math.round((uniqueRoles / 4) * 60 + (uniqueTraits / 6) * 40));
-
-  return {
-    topRole,
-    success,
-    message:
-      success >= 75
-        ? 'This team has strong role coverage and enough personality range to adapt.'
-        : 'Recruit more role variety and personality variety to raise readiness.',
-  };
-}
-
-export default function App() {
-  return <Layout />;
-}
+export default App;
